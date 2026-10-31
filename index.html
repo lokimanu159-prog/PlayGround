@@ -1,0 +1,383 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover"
+    />
+    <meta name="theme-color" content="#080b12" />
+    <meta
+      name="description"
+      content="Lendas de Aethermoor: um action RPG 3D para Android com cinco heróis, quatro domínios, combate em tempo real e uma mercadora com seu cão-guia."
+    />
+    <title>Lendas de Aethermoor — Action RPG 3D</title>
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23090d16'/%3E%3Cpath d='M32 8l5.8 17.4L56 31l-18.2 5.6L32 54l-5.8-17.4L8 31l18.2-5.6z' fill='%23e8c477'/%3E%3C/svg%3E" />
+  </head>
+  <body>
+    <div id="app">
+      <canvas id="game-canvas" aria-label="Mundo 3D de Lendas de Aethermoor"></canvas>
+      <div class="screen-fx" aria-hidden="true"></div>
+      <div id="damage-layer" aria-hidden="true"></div>
+      <div id="enemy-layer" aria-hidden="true"></div>
+      <div id="toast-layer" aria-live="polite"></div>
+
+      <!-- Boot -->
+      <div id="boot" class="screen boot-screen">
+        <div class="boot-sigil" aria-hidden="true">
+          <span></span><span></span><span></span><span></span>
+          <i>✦</i>
+        </div>
+        <p class="eyebrow">Action RPG 3D</p>
+        <h1>Lendas de Aethermoor</h1>
+        <p class="boot-status">Invocando os cinco heróis…</p>
+        <div class="boot-bar"><span id="boot-bar-fill"></span></div>
+      </div>
+
+      <!-- Title -->
+      <section id="title-screen" class="screen title-screen hidden">
+        <div class="title-shade" aria-hidden="true"></div>
+        <header class="title-top">
+          <div class="brand-mark" aria-hidden="true">✦</div>
+          <span class="brand-word">AETHERMOOR</span>
+          <span class="brand-tag">Crônicas do Abismo</span>
+        </header>
+
+        <div class="title-content">
+          <p class="eyebrow">Cinco heróis · Quatro domínios</p>
+          <h1 class="game-title">
+            <span>Lendas de</span>
+            <strong>Aethermoor</strong>
+          </h1>
+          <p class="tagline">
+            A última chama do mundo arde no coração de Aethermoor.
+            Escolha seu herói, forje sua lenda e enfrente o Eclipse.
+          </p>
+          <div class="title-actions">
+            <button id="btn-start" class="btn btn-primary btn-large">
+              <span>Iniciar Jornada</span>
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h13M13 6l6 6-6 6" /></svg>
+            </button>
+            <button id="btn-title-sound" class="icon-btn sound-btn" aria-label="Alternar som">
+              <svg class="icon-sound" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9v6h4l5 4V5L8 9H4zM17 8a5 5 0 010 8M19.5 5.5a9 9 0 010 13" /></svg>
+            </button>
+          </div>
+          <p class="title-hint">Toque para jogar · Otimizado para Android e iOS</p>
+        </div>
+
+        <footer class="title-footer">
+          <span><i class="dot"></i> Progresso salvo automaticamente</span>
+          <span>Um conto de espadas, sombras e brasas</span>
+        </footer>
+      </section>
+
+      <!-- Character select -->
+      <section id="select-screen" class="screen select-screen hidden">
+        <header class="select-header">
+          <button id="btn-back-title" class="btn btn-ghost btn-small">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19 12H6M11 18l-6-6 6-6" /></svg>
+            Voltar
+          </button>
+          <div class="select-heading">
+            <p class="eyebrow">Escolha seu destino</p>
+            <h1>Os Cinco de Aethermoor</h1>
+          </div>
+          <div class="select-profile">
+            <span class="coin-icon" aria-hidden="true">◆</span>
+            <span id="select-gold">320</span>
+          </div>
+        </header>
+
+        <div id="class-cards" class="class-cards" role="listbox" aria-label="Classes jogáveis"></div>
+
+        <aside class="select-panel">
+          <div class="select-class-title">
+            <span id="select-role" class="role-chip">Tanque</span>
+            <h2 id="select-name">Kaelen</h2>
+            <p id="select-title">O Guardião</p>
+          </div>
+          <p id="select-desc" class="select-desc"></p>
+          <div id="select-stats" class="stat-grid"></div>
+          <div id="select-abilities" class="ability-preview"></div>
+          <button id="btn-confirm-class" class="btn btn-primary btn-wide">
+            <span>Entrar em Aethermoor</span>
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h13M13 6l6 6-6 6" /></svg>
+          </button>
+        </aside>
+
+        <div class="select-swipe-hint" aria-hidden="true">Deslize para ver todos os heróis →</div>
+      </section>
+
+      <!-- Lobby HUD -->
+      <section id="lobby-ui" class="hud-layer hidden">
+        <div class="hud-top">
+          <div class="hero-card">
+            <div class="hero-portrait"><img id="lobby-portrait" alt="" /></div>
+            <div class="hero-meta">
+              <div class="hero-name-row">
+                <strong id="lobby-hero-name">Kaelen</strong>
+                <span id="lobby-hero-level" class="level-pill">Nv. 1</span>
+              </div>
+              <span id="lobby-hero-class" class="hero-sub">O Guardião</span>
+              <div class="xp-track"><span id="lobby-xp-fill"></span></div>
+            </div>
+          </div>
+          <div class="hud-top-right">
+            <div class="resource-pill gold-pill"><span class="coin-icon">◆</span><b id="lobby-gold">320</b></div>
+            <button id="btn-lobby-sound" class="icon-btn" aria-label="Alternar som">
+              <svg class="icon-sound" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9v6h4l5 4V5L8 9H4zM17 8a5 5 0 010 8M19.5 5.5a9 9 0 010 13" /></svg>
+            </button>
+            <button id="btn-lobby-help" class="icon-btn" aria-label="Ajuda">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" /><path d="M9.6 9a2.5 2.5 0 114 2c-.9.7-1.6 1.1-1.6 2.3M12 17h.01" /></svg>
+            </button>
+          </div>
+        </div>
+
+        <div class="lobby-title-plate">
+          <p class="eyebrow">Refúgio dos Últimos</p>
+          <h1>Praça de Aethermoor</h1>
+          <p id="lobby-subtitle">Fale com Maelis, escolha um domínio e parta em aventura.</p>
+        </div>
+
+        <div class="lobby-actions">
+          <button id="btn-shop" class="lobby-action shop-action">
+            <span class="action-icon">🛒</span>
+            <span class="action-copy"><b>Mercado de Maelis</b><small>Equipamentos & armas</small></span>
+            <span class="action-arrow">›</span>
+          </button>
+          <button id="btn-maps" class="lobby-action map-action">
+            <span class="action-icon">🗺️</span>
+            <span class="action-copy"><b>Mapa do Mundo</b><small>4 domínios para explorar</small></span>
+            <span class="action-arrow">›</span>
+          </button>
+        </div>
+
+        <div id="interact-prompt" class="interact-prompt hidden">
+          <span class="key-hint">✦</span>
+          <span>Falar com Maelis</span>
+        </div>
+
+        <div id="lobby-joystick" class="joystick" aria-label="Movimento">
+          <div class="joystick-ring"></div>
+          <div class="joystick-knob"><span>✦</span></div>
+        </div>
+
+        <div id="lobby-tip" class="lobby-tip">
+          <span class="tip-icon">✦</span>
+          <span>Use o direcional para caminhar. Toque em Maelis ou no mercado para negociar.</span>
+        </div>
+      </section>
+
+      <!-- Adventure HUD -->
+      <section id="adventure-hud" class="hud-layer hidden">
+        <div class="hud-top">
+          <div class="vitals-panel">
+            <div class="hero-portrait small"><img id="hud-portrait" alt="" /></div>
+            <div class="vitals-main">
+              <div class="hero-name-row">
+                <strong id="hud-hero-name">Kaelen</strong>
+                <span id="hud-hero-level" class="level-pill">Nv. 1</span>
+                <span id="hud-map-name" class="map-chip">Cripta de Brasa</span>
+              </div>
+              <div class="bar hp-bar"><span id="hp-fill"></span><b id="hp-text">240 / 240</b></div>
+              <div class="bar mana-bar"><span id="mana-fill"></span><b id="mana-text">80 / 80</b></div>
+            </div>
+          </div>
+
+          <div class="objective-panel">
+            <p class="eyebrow" id="objective-kicker">Domínio I</p>
+            <strong id="objective-text">Onda 1 · Elimine os inimigos</strong>
+            <div id="wave-pips" class="wave-pips"></div>
+          </div>
+
+          <div class="hud-top-right">
+            <div class="resource-pill gold-pill"><span class="coin-icon">◆</span><b id="hud-gold">320</b></div>
+            <button id="btn-lobby" class="btn btn-lobby">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 11l9-7 9 7M5 10v10h14V10M9 20v-6h6v6" /></svg>
+              <span>Lobby</span>
+            </button>
+            <button id="btn-pause" class="icon-btn" aria-label="Pausar">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14M16 5v14" /></svg>
+            </button>
+          </div>
+        </div>
+
+        <div id="boss-bar" class="boss-bar hidden">
+          <div class="boss-title"><span id="boss-name">Rei Ossada</span><em>Chefe do domínio</em></div>
+          <div class="boss-track"><span id="boss-fill"></span></div>
+        </div>
+
+        <div id="map-banner" class="map-banner hidden">
+          <p id="map-banner-kicker" class="eyebrow">Domínio I</p>
+          <h1 id="map-banner-name">Cripta de Brasa</h1>
+          <p id="map-banner-sub">As brasas nunca esqueceram.</p>
+        </div>
+
+        <canvas id="minimap" width="180" height="180" aria-label="Minimapa"></canvas>
+
+        <div id="buffs" class="buffs"></div>
+
+        <div id="combat-joystick" class="joystick" aria-label="Movimento">
+          <div class="joystick-ring"></div>
+          <div class="joystick-knob"><span>✦</span></div>
+        </div>
+
+        <div class="combat-controls">
+          <div class="secondary-controls">
+            <button id="btn-potion" class="round-btn small potion-btn" aria-label="Usar poção de vida">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10 3h4v5l3 5a5 5 0 11-10 0l3-5V3zM9 13h6" /></svg>
+              <span id="potion-count" class="count-badge">2</span>
+            </button>
+            <button id="btn-mana-potion" class="round-btn small mana-potion-btn" aria-label="Usar poção de mana">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10 3h4v5l3 5a5 5 0 11-10 0l3-5V3zM9 13h6" /><path d="M12 10v5M9.5 12.5h5" /></svg>
+              <span id="mana-potion-count" class="count-badge">1</span>
+            </button>
+            <button id="btn-dodge" class="round-btn small dodge-btn" aria-label="Esquivar">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12h11M12 6l6 6-6 6M19 5v14" /></svg>
+              <span class="cooldown-sweep"></span>
+            </button>
+          </div>
+
+          <div class="ability-cluster">
+            <button class="round-btn ability-btn" data-ability="0" aria-label="Habilidade 1">
+              <span class="ability-icon"></span><span class="ability-key">1</span>
+              <span class="cooldown-sweep"></span><span class="cooldown-text"></span>
+            </button>
+            <button class="round-btn ability-btn" data-ability="1" aria-label="Habilidade 2">
+              <span class="ability-icon"></span><span class="ability-key">2</span>
+              <span class="cooldown-sweep"></span><span class="cooldown-text"></span>
+            </button>
+            <button class="round-btn ability-btn" data-ability="2" aria-label="Habilidade 3">
+              <span class="ability-icon"></span><span class="ability-key">3</span>
+              <span class="cooldown-sweep"></span><span class="cooldown-text"></span>
+            </button>
+          </div>
+
+          <button id="btn-attack" class="attack-btn" aria-label="Atacar">
+            <span class="attack-glow"></span>
+            <svg viewBox="0 0 48 48" aria-hidden="true">
+              <path d="M11 37l6-1 20-20-5-5-20 20-1 6zM30 10l8 8M12 27l9 9" />
+            </svg>
+            <span class="attack-label">ATACAR</span>
+          </button>
+        </div>
+
+        <div class="hud-bottom-hint">
+          <span class="desktop-hint">WASD mover · Espaço atacar · 1/2/3 habilidades · Shift esquivar · F poção</span>
+          <span class="touch-hint">Arraste para mover · segure para atacar</span>
+        </div>
+      </section>
+
+      <!-- Shop modal -->
+      <section id="shop-modal" class="modal hidden" aria-label="Mercado de Maelis">
+        <div class="modal-scrim"></div>
+        <div class="modal-card shop-card">
+          <header class="shop-header">
+            <div class="vendor-portrait"><img id="vendor-portrait" alt="Maelis e Brasa" /></div>
+            <div class="shop-heading">
+              <p class="eyebrow">Mercado de Aethermoor</p>
+              <h2>Maelis, a Mercadora</h2>
+              <p>“Brasa fareja ouro e problemas. Eu vendo a solução para os dois.”</p>
+            </div>
+            <div class="shop-gold"><span class="coin-icon">◆</span><b id="shop-gold">320</b></div>
+            <button id="btn-shop-close" class="icon-btn close-btn" aria-label="Fechar mercado">✕</button>
+          </header>
+
+          <div class="shop-tabs" role="tablist">
+            <button class="shop-tab active" data-tab="weapon">Armas</button>
+            <button class="shop-tab" data-tab="armor">Armaduras</button>
+            <button class="shop-tab" data-tab="relic">Relíquias</button>
+            <button class="shop-tab" data-tab="consumable">Consumíveis</button>
+          </div>
+
+          <div id="shop-items" class="shop-items"></div>
+
+          <footer class="shop-footer">
+            <div class="dog-note"><span>🐕</span><p><b>Brasa, o cão-guia</b> — “Ele aprova esta compra. Provavelmente.”</p></div>
+            <div class="shop-equipped">
+              <span id="shop-equip-summary">Arma: Lâmina do Juramento</span>
+            </div>
+          </footer>
+        </div>
+      </section>
+
+      <!-- Maps modal -->
+      <section id="maps-modal" class="modal hidden" aria-label="Mapa do mundo">
+        <div class="modal-scrim"></div>
+        <div class="modal-card maps-card">
+          <header class="maps-header">
+            <div>
+              <p class="eyebrow">Escolha seu destino</p>
+              <h2>Os Quatro Domínios</h2>
+              <p>Cada domínio guarda um chefe, relíquias e uma história própria.</p>
+            </div>
+            <button id="btn-maps-close" class="icon-btn close-btn" aria-label="Fechar mapa">✕</button>
+          </header>
+          <div id="map-cards" class="map-cards"></div>
+          <footer class="maps-footer">
+            <span><i class="dot"></i> Recomendado: Nv. 1+</span>
+            <span id="maps-progress">0 / 4 domínios purificados</span>
+          </footer>
+        </div>
+      </section>
+
+      <!-- Pause modal -->
+      <section id="pause-modal" class="modal hidden" aria-label="Jogo pausado">
+        <div class="modal-scrim"></div>
+        <div class="modal-card pause-card">
+          <p class="eyebrow">Um instante de paz</p>
+          <h2>Jogo Pausado</h2>
+          <p>A batalha espera por você.</p>
+          <div class="pause-actions">
+            <button id="btn-resume" class="btn btn-primary btn-wide">Continuar</button>
+            <button id="btn-pause-lobby" class="btn btn-ghost btn-wide">Voltar ao Lobby</button>
+            <button id="btn-pause-help" class="btn btn-ghost btn-wide">Como Jogar</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- Result modal -->
+      <section id="result-modal" class="modal hidden" aria-label="Resultado da aventura">
+        <div class="modal-scrim"></div>
+        <div class="modal-card result-card">
+          <div id="result-sigil" class="result-sigil">✦</div>
+          <p id="result-kicker" class="eyebrow">Domínio purificado</p>
+          <h2 id="result-title">Vitória!</h2>
+          <p id="result-sub">A brasa do domínio se aquieta.</p>
+          <div id="result-rewards" class="result-rewards"></div>
+          <div class="result-actions">
+            <button id="btn-result-lobby" class="btn btn-primary btn-wide">Voltar ao Lobby</button>
+            <button id="btn-result-retry" class="btn btn-ghost btn-wide">Lutar Novamente</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- Help modal -->
+      <section id="help-modal" class="modal hidden" aria-label="Como jogar">
+        <div class="modal-scrim"></div>
+        <div class="modal-card help-card">
+          <header class="help-header">
+            <div>
+              <p class="eyebrow">Guia de Aethermoor</p>
+              <h2>Como Jogar</h2>
+            </div>
+            <button id="btn-help-close" class="icon-btn close-btn" aria-label="Fechar ajuda">✕</button>
+          </header>
+          <div class="help-grid">
+            <div><b>Mover</b><p>Arraste o direcional à esquerda. No teclado, use WASD ou as setas.</p></div>
+            <div><b>Atacar</b><p>Toque em ATACAR. Seu herói mira automaticamente o inimigo mais próximo.</p></div>
+            <div><b>Habilidades</b><p>Cada classe tem três poderes com mana e recarga. Use no momento certo.</p></div>
+            <div><b>Esquivar</b><p>O botão de esquiva concede invulnerabilidade breve e reposiciona seu herói.</p></div>
+            <div><b>Lobby</b><p>O botão Lobby abandona a aventura e preserva ouro, itens e experiência.</p></div>
+            <div><b>Mercado</b><p>Maelis vende armas, armaduras e relíquias. Brasa, o cão-guia, observa tudo.</p></div>
+          </div>
+          <button id="btn-help-ok" class="btn btn-primary btn-wide">Entendi</button>
+        </div>
+      </section>
+
+      <!-- Level up / toast handled in #toast-layer -->
+    </div>
+
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>
